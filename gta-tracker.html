@@ -222,6 +222,13 @@ header{
   mix-blend-mode:screen;
   object-position:center top;
 }
+.ch-icon.acid-icon{
+  background:linear-gradient(135deg,#010e00 0%,#0a2800 40%,#0d3a00 70%,#050f00 100%);
+}
+.ch-icon.acid-icon img{
+  mix-blend-mode:screen;
+  object-position:center top;
+}
 .ch-icon.on{
   background:rgba(255,255,255,.07);
   box-shadow:0 0 0 1px var(--ac,#8040ff),0 0 22px var(--ag,rgba(120,60,255,.4)),0 0 48px var(--ag,rgba(120,60,255,.15));
@@ -1075,7 +1082,7 @@ function renderAcid(){
   const dur=getSupplyDur('acid');const rem=supplyRem('acid');const pct=supplyPct('acid');const mRem=mansionRemain('acid');const dRem=acidDailyRemain();
   const now=new Date();const reset=new Date(now);reset.setUTCHours(6,0,0,0);if(reset<=now)reset.setDate(reset.getDate()+1);
   const nextReset=Math.round((reset-now)/3600000*10)/10;
-  const inner=`${cardHeader('acid','⚗️','ACID LAB',(mansion||daily)?`${mansion?'Mansion':''}${mansion&&daily?' + ':''}${daily?'Daily':''} boost active`:'Full upgrades · '+bz.earn,b.active)}
+  const inner=`${cardHeader('acid','<img src="acid-icon.jpg" alt="Acid Lab">','ACID LAB',(mansion||daily)?`${mansion?'Mansion':''}${mansion&&daily?' + ':''}${daily?'Daily':''} boost active`:'Full upgrades · '+bz.earn,b.active,'acid-icon')}
   <div class="boosts">
     <div class="boost-pill ${daily?'on-acid':''}" onclick="toggleAcidDaily()">🧪 Daily Boost <span class="pill-timer">${daily?fmt(dRem)+' left':'30min · 2× · FREE · resets '+nextReset+'h'}</span></div>
     <div class="boost-pill ${mansion?'on':''}" onclick="toggleMansionBoost('acid')">🏠 Mansion <span class="pill-timer">${mansion?fmt(mRem)+' left':'3× · 24h'}</span></div>
