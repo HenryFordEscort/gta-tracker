@@ -215,6 +215,13 @@ header{
   width:100%;height:100%;object-fit:cover;object-position:center top;
   border-radius:14px;
 }
+.ch-icon.nc-icon{
+  background:linear-gradient(135deg,#1a0535 0%,#4a0a8a 40%,#2d0550 70%,#0a0220 100%);
+}
+.ch-icon.nc-icon img{
+  mix-blend-mode:screen;
+  object-position:center 10%;
+}
 .ch-icon.on{
   background:rgba(255,255,255,.07);
   box-shadow:0 0 0 1px var(--ac,#8040ff),0 0 22px var(--ag,rgba(120,60,255,.4)),0 0 48px var(--ag,rgba(120,60,255,.15));
@@ -911,9 +918,9 @@ function card(id,content){
   </div>`;
 }
 
-function cardHeader(id,icon,name,sub,on){
+function cardHeader(id,icon,name,sub,on,extraIconClass=''){
   return`<div class="ch">
-  <div class="ch-icon ${on?'on':''}" style="--ac:${BIZ[id]?.color||'#fff'};--ag:${BIZ[id]?.glow||'rgba(255,255,255,.2)'}">
+  <div class="ch-icon ${on?'on':''} ${extraIconClass}" style="--ac:${BIZ[id]?.color||'#fff'};--ag:${BIZ[id]?.glow||'rgba(255,255,255,.2)'}">
     ${icon}
   </div>
   <div class="ch-info">
@@ -987,7 +994,7 @@ function renderNightclub(){
   const djColor=djState==='danger'?'var(--danger)':djState==='warn'?'var(--warn)':'#C084FC';
 
   const inner=`
-  ${cardHeader('nightclub','🌙','NIGHTCLUB','5 technicians · All upgrades · '+bz.earn,on)}
+  ${cardHeader('nightclub','<img src="nc-icon.jpg" alt="Nightclub">','NIGHTCLUB','5 technicians · All upgrades · '+bz.earn,on,'nc-icon')}
   <div class="hdiv"></div>
   <div class="nc-sec-hdr" onclick="toggleSec('safe')"><div class="nc-sec-title">💰 Safe Income</div><div class="nc-sec-arrow open" id="nca_safe">▾</div></div>
   <div class="nc-sec-body open" id="ncb_safe">
