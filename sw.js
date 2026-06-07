@@ -1,7 +1,11 @@
-const CACHE = 'gta-biz-v2';
+const CACHE = 'gta-biz-v3';
 const ASSETS = [
   './gta-tracker.html',
   './manifest.json',
+  './bg.jpg',
+  './nc-icon.jpg',
+  './meth-icon.jpg',
+  './bunker-icon.jpg',
 ];
 
 self.addEventListener('install', e => {
