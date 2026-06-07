@@ -493,10 +493,15 @@ header{
 .prod-meta{display:flex;align-items:center;gap:8px;}
 .prod-pct{font-size:13px;font-weight:800;transition:color .4s;}
 .prod-val{font-size:11px;font-weight:700;color:var(--gold);opacity:.8;}
-.prod-bar-wrap{height:3px;background:rgba(255,255,255,.07);border-radius:4px;margin-bottom:4px;overflow:hidden;}
-.prod-bar-fill{height:100%;border-radius:4px;transition:width 1s linear;}
-.prod-seg{opacity:.5;}
-.prod-seg.on{opacity:1;}
+.prod-bar-wrap{height:3px;background:rgba(255,255,255,.07);border-radius:4px;margin-bottom:8px;overflow:hidden;}
+.prod-bar-fill{height:100%;border-radius:4px;transition:width 2s linear;}
+.prod-pips{display:flex;gap:5px;margin-bottom:5px;}
+.prod-pip{flex:1;height:6px;border-radius:4px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.06);transition:all .4s;}
+.prod-pip.active{opacity:.6;}
+.prod-pip.done{opacity:1;}
+.prod-footer{display:flex;justify-content:space-between;align-items:center;margin-top:2px;}
+.prod-foot-lbl{font-size:9px;color:var(--sub2);}
+.prod-foot-rem{font-size:9px;font-weight:700;}
 
 .earn-section{margin-top:5px;}
 .earn-top{display:flex;align-items:flex-start;justify-content:space-between;}
@@ -670,14 +675,14 @@ const BIZ={
   weed:     {color:'#84CC16',glow:'rgba(132,204,22,.3)', rgb:'132,204,22', earn:'$425,280'},
 };
 
-// product: fullMin = minutes from 0% to 100% product, earnMax = full product value
+// product: fills = how many full supply runs to reach 100% stock, earnMax = full value
 const PRODUCT={
-  bunker: {fullMin:700, earnMax:1029000},
-  acid:   {fullMin:360, earnMax:351840},
-  meth:   {fullMin:720, earnMax:892500},
-  cocaine:{fullMin:750, earnMax:525000},
-  cash:   {fullMin:800, earnMax:496140},
-  weed:   {fullMin:800, earnMax:425280},
+  bunker: {fills:4, earnMax:1029000},
+  acid:   {fills:3, earnMax:351840},
+  meth:   {fills:5, earnMax:892500},
+  cocaine:{fills:5, earnMax:525000},
+  cash:   {fills:5, earnMax:496140},
+  weed:   {fills:5, earnMax:425280},
 };
 
 // ═══ STATE ═══════════════════════════════════════════════════
@@ -812,24 +817,28 @@ function segsHTML(id,pct,color,glow){
 }
 
 // ═══ PRODUCT ══════════════════════════════════════════════════
+function productFullMin(id){
+  // total minutes to fill product from 0% = fills × current supply duration
+  const p=PRODUCT[id];if(!p)return null;
+  const fills=p.fills||4;
+  const durMin=getSupplyDur(id);
+  return fills*durMin;
+}
 function productCurrent(id){
   const b=S[id];const p=PRODUCT[id];if(!p||!b||!b.productSetAt)return null;
+  const fullMin=productFullMin(id);if(!fullMin)return null;
   const elapsed=(Date.now()-b.productSetAt)/60000;
-  return Math.min(1,(b.productPct||0)+elapsed/p.fullMin);
+  return Math.min(1,(b.productPct||0)+elapsed/fullMin);
 }
 function productFillRem(id){
   const cur=productCurrent(id);if(cur===null)return null;
   if(cur>=1)return 0;
-  return(1-cur)*PRODUCT[id].fullMin*60;
+  const fullMin=productFullMin(id);
+  return(1-cur)*fullMin*60;
 }
 function productValue(id){
   const cur=productCurrent(id);if(cur===null)return null;
   return Math.round(cur*PRODUCT[id].earnMax);
-}
-function setProductPct(id,pct){
-  S[id].productPct=pct;
-  S[id].productSetAt=pct>0?Date.now():null;
-  save();render();
 }
 function soldProduct(id){
   S[id].productPct=0;S[id].productSetAt=null;
@@ -844,32 +853,34 @@ function productHTML(id){
   const col=BIZ[id]?.color||'#fff';
   const glow=BIZ[id]?.glow||'rgba(255,255,255,.2)';
   const full=cur!==null&&cur>=1;
-  const sc=full?'var(--gold)':pct!==null&&pct>=80?col:pct!==null&&pct>=40?col+'cc':'rgba(255,255,255,.3)';
-  const lit=cur===null?0:Math.min(5,Math.round(cur*5));
-  const segs=[1,2,3,4,5].map(i=>{
-    const on=i<=lit;
-    return`<div class="seg-tap prod-seg ${on?'on':''}" onclick="setProductPct('${id}',${i*0.2})"
-      style="${on?`background:${sc};box-shadow:0 0 6px ${glow}`:''};"></div>`;
+  const sc=full?'var(--gold)':pct!==null&&pct>=60?col:pct!==null&&pct>=30?col+'bb':'rgba(255,255,255,.25)';
+  const fills=PRODUCT[id]?.fills||4;
+  // pip per supply run
+  const pips=Array.from({length:fills},(_,i)=>{
+    const threshold=(i+1)/fills;
+    const done=cur!==null&&cur>=threshold;
+    const active=cur!==null&&cur>i/fills&&cur<threshold;
+    return`<div class="prod-pip ${done?'done':active?'active':''}"
+      style="${done||active?`background:${sc};box-shadow:0 0 6px ${glow}`:''};"></div>`;
   }).join('');
   return`<div class="hdiv"></div>
   <div class="prod-section">
     <div class="prod-header">
-      <div class="prod-title">📦 PRODUCT</div>
+      <div class="prod-title">📦 STOCK</div>
       <div class="prod-meta">
-        <span class="prod-pct" style="color:${full?'var(--gold)':sc}">${full?'FULL':pct!==null?pct+'%':'—'}</span>
-        ${val!==null?`<span class="prod-val">${fmtM(val)}</span>`:''}
+        <span class="prod-pct" id="pp_${id}" style="color:${full?'var(--gold)':sc}">${cur===null?'—':full?'FULL':pct+'%'}</span>
+        ${val!==null?`<span class="prod-val" id="pv_${id}">${fmtM(val)}</span>`:'<span class="prod-val" id="pv_${id}"></span>'}
       </div>
     </div>
-    ${cur!==null?`<div class="prod-bar-wrap"><div class="prod-bar-fill" id="pb_${id}" style="width:${pct}%;background:linear-gradient(90deg,${sc}88,${sc});box-shadow:0 0 8px ${glow}"></div></div>`:''}
-    <div class="seg-taps">${segs}</div>
-    <div class="seg-footer">
-      <span class="seg-lbl" style="color:rgba(239,68,68,.5)" onclick="setProductPct('${id}',0)">Empty</span>
-      <span class="seg-lbl">20</span><span class="seg-lbl">40</span><span class="seg-lbl">60</span><span class="seg-lbl">80</span>
-      <span class="seg-lbl" style="color:${sc}">${cur===null?'tap →':full?'FULL ✓':rem!==null?fmt(rem)+' left':pct+'%'}</span>
+    <div class="prod-bar-wrap"><div class="prod-bar-fill" id="pb_${id}" style="width:${pct||0}%;background:linear-gradient(90deg,${sc}88,${sc});box-shadow:${cur!==null?`0 0 8px ${glow}`:'none'}"></div></div>
+    <div class="prod-pips">${pips}</div>
+    <div class="prod-footer">
+      <span class="prod-foot-lbl">${cur===null?'start tracking → top up supply':'fills = '+fills+'× supply'}</span>
+      <span class="prod-foot-rem" id="pr_${id}" style="color:${sc}">${cur===null?'':full?'SELL IT!':rem!==null?fmt(rem)+' to full':''}</span>
     </div>
     ${full?`<button class="btn-main" onclick="soldProduct('${id}')"
-      style="background:linear-gradient(135deg,var(--gold),#f59e0b);color:#000;font-weight:800;margin-top:8px">
-      💸 Sprzedano — Reset
+      style="background:linear-gradient(135deg,var(--gold),#f59e0b);color:#000;font-weight:800;margin-top:10px">
+      💸 Sprzedano — Reset Stock
     </button>`:''}
   </div>`;
 }
@@ -947,7 +958,13 @@ function updateMissionBar(){
 
 // ═══ ACTIONS ═════════════════════════════════════════════════
 function setSupplyPct(id,pct){const durMs=getSupplyDur(id)*60000;S[id].supplyExhaustsAt=Date.now()+pct*durMs;save();scheduleSupplyNotif(id);render();}
-function buySupplies(id){setSupplyPct(id,1.0);}
+function buySupplies(id){
+  // snapshot current product progress, then restart tracking from now
+  const curProd=productCurrent(id);
+  S[id].productPct=curProd!==null?curProd:0;
+  S[id].productSetAt=Date.now();
+  setSupplyPct(id,1.0);
+}
 function collectSafe(){
   const el2=elMin(S.nc.safeCollectedAt);const ticks2=Math.min(5,Math.floor(el2/DEF.nc_safe_tick));
   const amt=ticks2*DEF.nc_safe_income;
@@ -1315,20 +1332,23 @@ function liveUpdate(){
       if(on){seg.style.background=sc;seg.style.boxShadow=`0 0 6px ${sg}`;}
       else{seg.style.background='';seg.style.boxShadow='';}
     });
-    // product bar live update
+    // product live update
     const cur=productCurrent(id);
-    const pBar=document.getElementById(`pb_${id}`);
-    if(pBar&&cur!==null){
+    if(cur!==null){
       const pp=Math.round(cur*100);const col=BIZ[id]?.color||'#fff';const gl=BIZ[id]?.glow||'rgba(255,255,255,.2)';
-      pBar.style.width=pp+'%';
-      pBar.style.background=`linear-gradient(90deg,${col}88,${col})`;
-      pBar.style.boxShadow=`0 0 8px ${gl}`;
-    }
-    // product full — trigger re-render once when it hits 100%
-    if(cur!==null&&cur>=1&&S[id].productSetAt){
-      const pPct=document.querySelector(`[data-id="${id}"] .prod-pct`);
-      const pRem=document.querySelector(`[data-id="${id}"] .seg-footer span:last-child`);
-      if(pPct&&pPct.textContent!=='FULL'){pPct.textContent='FULL';pPct.style.color='var(--gold)';render();}
+      const full=cur>=1;
+      const sc=full?'var(--gold)':pp>=60?col:pp>=30?col+'bb':'rgba(255,255,255,.25)';
+      const pBar=document.getElementById(`pb_${id}`);
+      if(pBar){pBar.style.width=pp+'%';pBar.style.background=`linear-gradient(90deg,${sc}88,${sc})`;pBar.style.boxShadow=full||pp>0?`0 0 8px ${gl}`:'none';}
+      const pPct=document.getElementById(`pp_${id}`);
+      if(pPct){pPct.textContent=full?'FULL':pp+'%';pPct.style.color=sc;}
+      const pVal=document.getElementById(`pv_${id}`);
+      if(pVal)pVal.textContent=full||pp>0?fmtM(Math.round(cur*PRODUCT[id].earnMax)):'';
+      const pRem=document.getElementById(`pr_${id}`);
+      if(pRem){const rem=productFillRem(id);pRem.textContent=full?'SELL IT!':rem!==null?fmt(rem)+' to full':'';pRem.style.color=sc;}
+      if(full&&!notifiedEmpty[id+'_prod']){notifiedEmpty[id+'_prod']=true;notify(`💰 ${id.toUpperCase()} FULL`,`Stock pełny — czas sprzedać!`,id+'_prod');if(navigator.vibrate)navigator.vibrate([300,100,300,100,300]);}
+      if(!full)notifiedEmpty[id+'_prod']=false;
+      if(full&&!document.getElementById(`pb_${id}`)?.parentElement?.querySelector('.btn-main[onclick*="soldProduct"]'))render();
     }
   });
   // NC safe
