@@ -209,7 +209,11 @@ header{
   width:48px;height:48px;border-radius:14px;flex-shrink:0;
   display:flex;align-items:center;justify-content:center;font-size:23px;
   background:rgba(255,255,255,.04);border:1px solid var(--border2);
-  position:relative;transition:all .4s;
+  position:relative;transition:all .4s;overflow:hidden;
+}
+.ch-icon img{
+  width:100%;height:100%;object-fit:cover;object-position:center top;
+  border-radius:14px;
 }
 .ch-icon.on{
   background:rgba(255,255,255,.07);
@@ -1076,7 +1080,7 @@ function renderAcid(){
 function renderMeth(){
   const b=S.meth;const bz=BIZ.meth;const boost=isBoostActive('meth');
   const dur=boost?b.supplyBoostMin:b.supplyMin;const rem=supplyRem('meth');const pct=supplyPct('meth');const mRem=mansionRemain('meth');
-  const inner=`${cardHeader('meth','🧪','METH LAB',boost?`Mansion Boost · ${fmt(mRem)} left`:'MC President active · '+bz.earn,b.active)}
+  const inner=`${cardHeader('meth','<img src="meth-icon.jpg" alt="Meth">','METH LAB',boost?`Mansion Boost · ${fmt(mRem)} left`:'MC President active · '+bz.earn,b.active)}
   <div class="boosts"><div class="boost-pill ${boost?'on':''}" onclick="toggleMansionBoost('meth')">🏠 Mansion Boost <span class="pill-timer">${boost?fmt(mRem)+' left':'3× · 24h · '+b.supplyMin+'→'+b.supplyBoostMin+'min'}</span></div></div>
   ${timerBlock(rem,pct,bz.color,dur)}${segsHTML('meth',pct,bz.color,bz.glow)}${topUpBtn('meth',bz.color,bz.glow)}${earnHTML('meth')}`;
   return card('meth',inner);
