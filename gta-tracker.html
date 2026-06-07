@@ -1145,14 +1145,31 @@ function renderEarningsSummary(){
 function resetAllEarnings(){['nc','bunker','acid','meth','cocaine','cash','weed'].forEach(k=>{if(S[k]){S[k].earned=0;S[k].saleCount=0;}});save();render();}
 
 // ═══ MAIN RENDER ═════════════════════════════════════════════
+function urgencyScore(id){
+  // active timers sort by time remaining asc; idle (null) goes to end
+  if(!S[id]||!S[id].active)return Infinity;
+  const rem=supplyRem(id);
+  return rem===null?Infinity-1:rem;
+}
+
+function renderIllegalCards(){
+  const cards=[
+    {id:'bunker',  fn:()=>renderBunker()},
+    {id:'acid',    fn:()=>renderAcid()},
+    {id:'meth',    fn:()=>renderMeth()},
+    {id:'cocaine', fn:()=>renderMC('cocaine','❄️','COCAINE LOCKUP')},
+    {id:'cash',    fn:()=>renderMC('cash','💵','CASH FACTORY')},
+    {id:'weed',    fn:()=>renderMC('weed','🌿','WEED FARM')},
+  ];
+  cards.sort((a,b)=>urgencyScore(a.id)-urgencyScore(b.id));
+  return cards.map(c=>c.fn()).join('');
+}
+
 function render(){
   document.getElementById('root').innerHTML=
     renderNightclub()+
     `<div class="sec-lbl">Illegal Businesses</div><div class="cards">`+
-    renderBunker()+renderAcid()+renderMeth()+
-    renderMC('cocaine','❄️','COCAINE LOCKUP')+
-    renderMC('cash','💵','CASH FACTORY')+
-    renderMC('weed','🌿','WEED FARM')+
+    renderIllegalCards()+
     `</div>`+
     renderEarningsSummary();
   if(!S.nc.warehouseTracking)DEF.nc_warehouse.forEach(p=>{const el=document.getElementById('wh_in_'+p.id);if(el)el.value=S.nc.warehouseStock[p.id]||0;});
