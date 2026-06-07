@@ -486,6 +486,18 @@ header{
 .modal-save:active{transform:scale(.97);}
 
 /* ── EARNINGS ──────────────────────────────────────────── */
+/* ── PRODUCT ────────────────────────────────────────────── */
+.prod-section{margin-top:5px;}
+.prod-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+.prod-title{font-size:8px;font-weight:900;letter-spacing:2.5px;text-transform:uppercase;color:var(--sub2);}
+.prod-meta{display:flex;align-items:center;gap:8px;}
+.prod-pct{font-size:13px;font-weight:800;transition:color .4s;}
+.prod-val{font-size:11px;font-weight:700;color:var(--gold);opacity:.8;}
+.prod-bar-wrap{height:3px;background:rgba(255,255,255,.07);border-radius:4px;margin-bottom:4px;overflow:hidden;}
+.prod-bar-fill{height:100%;border-radius:4px;transition:width 1s linear;}
+.prod-seg{opacity:.5;}
+.prod-seg.on{opacity:1;}
+
 .earn-section{margin-top:5px;}
 .earn-top{display:flex;align-items:flex-start;justify-content:space-between;}
 .earn-lbl{font-size:8px;font-weight:900;letter-spacing:2.5px;text-transform:uppercase;color:var(--sub2);margin-bottom:5px;}
@@ -658,17 +670,27 @@ const BIZ={
   weed:     {color:'#84CC16',glow:'rgba(132,204,22,.3)', rgb:'132,204,22', earn:'$425,280'},
 };
 
+// product: fullMin = minutes from 0% to 100% product, earnMax = full product value
+const PRODUCT={
+  bunker: {fullMin:700, earnMax:1029000},
+  acid:   {fullMin:360, earnMax:351840},
+  meth:   {fullMin:720, earnMax:892500},
+  cocaine:{fullMin:750, earnMax:525000},
+  cash:   {fullMin:800, earnMax:496140},
+  weed:   {fullMin:800, earnMax:425280},
+};
+
 // ═══ STATE ═══════════════════════════════════════════════════
 function initState(){
   return{
     alertMin:DEF.alertMin,
     nc:{active:true,safeCollectedAt:null,djChangedAt:null,djInterval:DEF.nc_dj_interval,warehouseTracking:false,warehouseStartedAt:null,warehouseStock:{guns:0,cocaine:0,meth:0,cash:0,cargo:0},earned:0,saleCount:0},
-    bunker: {active:true,mansionBoost:false,mansionBoostAt:null,supplyExhaustsAt:null,supplyMin:DEF.bunker_supply_no_boost,supplyBoostMin:DEF.bunker_supply_boost,earned:0,saleCount:0},
-    acid:   {active:true,mansionBoost:false,mansionBoostAt:null,dailyBoost:false,dailyBoostAt:null,supplyExhaustsAt:null,supplyMin:DEF.acid_supply,supplyBoostMin:DEF.acid_supply_boost,supplyBothMin:DEF.acid_supply_both,earned:0,saleCount:0},
-    meth:   {active:true,mansionBoost:false,mansionBoostAt:null,supplyExhaustsAt:null,supplyMin:DEF.meth_supply,supplyBoostMin:DEF.meth_supply_boost,earned:0,saleCount:0},
-    cocaine:{active:true,mansionBoost:false,mansionBoostAt:null,supplyExhaustsAt:null,supplyMin:DEF.cocaine_supply,supplyBoostMin:DEF.cocaine_supply_boost,earned:0,saleCount:0},
-    cash:   {active:true,mansionBoost:false,mansionBoostAt:null,supplyExhaustsAt:null,supplyMin:DEF.cash_supply,supplyBoostMin:DEF.cash_supply_boost,earned:0,saleCount:0},
-    weed:   {active:true,mansionBoost:false,mansionBoostAt:null,supplyExhaustsAt:null,supplyMin:DEF.weed_supply,supplyBoostMin:DEF.weed_supply_boost,earned:0,saleCount:0},
+    bunker: {active:true,mansionBoost:false,mansionBoostAt:null,supplyExhaustsAt:null,supplyMin:DEF.bunker_supply_no_boost,supplyBoostMin:DEF.bunker_supply_boost,earned:0,saleCount:0,productPct:0,productSetAt:null},
+    acid:   {active:true,mansionBoost:false,mansionBoostAt:null,dailyBoost:false,dailyBoostAt:null,supplyExhaustsAt:null,supplyMin:DEF.acid_supply,supplyBoostMin:DEF.acid_supply_boost,supplyBothMin:DEF.acid_supply_both,earned:0,saleCount:0,productPct:0,productSetAt:null},
+    meth:   {active:true,mansionBoost:false,mansionBoostAt:null,supplyExhaustsAt:null,supplyMin:DEF.meth_supply,supplyBoostMin:DEF.meth_supply_boost,earned:0,saleCount:0,productPct:0,productSetAt:null},
+    cocaine:{active:true,mansionBoost:false,mansionBoostAt:null,supplyExhaustsAt:null,supplyMin:DEF.cocaine_supply,supplyBoostMin:DEF.cocaine_supply_boost,earned:0,saleCount:0,productPct:0,productSetAt:null},
+    cash:   {active:true,mansionBoost:false,mansionBoostAt:null,supplyExhaustsAt:null,supplyMin:DEF.cash_supply,supplyBoostMin:DEF.cash_supply_boost,earned:0,saleCount:0,productPct:0,productSetAt:null},
+    weed:   {active:true,mansionBoost:false,mansionBoostAt:null,supplyExhaustsAt:null,supplyMin:DEF.weed_supply,supplyBoostMin:DEF.weed_supply_boost,earned:0,saleCount:0,productPct:0,productSetAt:null},
     sessionPausedAt:null,
   };
 }
@@ -680,6 +702,8 @@ let S=(()=>{
       if(!p[id])p[id]=initState()[id];
       if(p[id].earned===undefined)p[id].earned=0;
       if(p[id].saleCount===undefined)p[id].saleCount=0;
+      if(p[id].productPct===undefined)p[id].productPct=0;
+      if(p[id].productSetAt===undefined)p[id].productSetAt=null;
     });
     if(p.nc){if(p.nc.earned===undefined)p.nc.earned=0;if(p.nc.saleCount===undefined)p.nc.saleCount=0;}
     if(!p.nc)p.nc=initState().nc;
@@ -784,6 +808,69 @@ function segsHTML(id,pct,color,glow){
     <span class="seg-lbl" style="color:rgba(239,68,68,.5)" onclick="setSupplyPct('${id}',0)">Empty</span>
     <span class="seg-lbl">20</span><span class="seg-lbl">40</span><span class="seg-lbl">60</span><span class="seg-lbl">80</span>
     <span class="seg-lbl" style="color:${pct===null?'var(--sub2)':sc}">${pct===null?'tap →':pctNum+'%'}</span>
+  </div>`;
+}
+
+// ═══ PRODUCT ══════════════════════════════════════════════════
+function productCurrent(id){
+  const b=S[id];const p=PRODUCT[id];if(!p||!b||!b.productSetAt)return null;
+  const elapsed=(Date.now()-b.productSetAt)/60000;
+  return Math.min(1,(b.productPct||0)+elapsed/p.fullMin);
+}
+function productFillRem(id){
+  const cur=productCurrent(id);if(cur===null)return null;
+  if(cur>=1)return 0;
+  return(1-cur)*PRODUCT[id].fullMin*60;
+}
+function productValue(id){
+  const cur=productCurrent(id);if(cur===null)return null;
+  return Math.round(cur*PRODUCT[id].earnMax);
+}
+function setProductPct(id,pct){
+  S[id].productPct=pct;
+  S[id].productSetAt=pct>0?Date.now():null;
+  save();render();
+}
+function soldProduct(id){
+  S[id].productPct=0;S[id].productSetAt=null;
+  save();render();
+}
+
+function productHTML(id){
+  const cur=productCurrent(id);
+  const pct=cur!==null?Math.round(cur*100):null;
+  const val=productValue(id);
+  const rem=productFillRem(id);
+  const col=BIZ[id]?.color||'#fff';
+  const glow=BIZ[id]?.glow||'rgba(255,255,255,.2)';
+  const full=cur!==null&&cur>=1;
+  const sc=full?'var(--gold)':pct!==null&&pct>=80?col:pct!==null&&pct>=40?col+'cc':'rgba(255,255,255,.3)';
+  const lit=cur===null?0:Math.min(5,Math.round(cur*5));
+  const segs=[1,2,3,4,5].map(i=>{
+    const on=i<=lit;
+    return`<div class="seg-tap prod-seg ${on?'on':''}" onclick="setProductPct('${id}',${i*0.2})"
+      style="${on?`background:${sc};box-shadow:0 0 6px ${glow}`:''};"></div>`;
+  }).join('');
+  return`<div class="hdiv"></div>
+  <div class="prod-section">
+    <div class="prod-header">
+      <div class="prod-title">📦 PRODUCT</div>
+      <div class="prod-meta">
+        <span class="prod-pct" style="color:${full?'var(--gold)':sc}">${full?'FULL':pct!==null?pct+'%':'—'}</span>
+        ${val!==null?`<span class="prod-val">${fmtM(val)}</span>`:''}
+      </div>
+    </div>
+    ${cur!==null?`<div class="prod-bar-wrap"><div class="prod-bar-fill" id="pb_${id}" style="width:${pct}%;background:linear-gradient(90deg,${sc}88,${sc});box-shadow:0 0 8px ${glow}"></div></div>`:''}
+    <div class="seg-taps">${segs}</div>
+    <div class="seg-footer">
+      <span class="seg-lbl" style="color:rgba(239,68,68,.5)" onclick="setProductPct('${id}',0)">Empty</span>
+      <span class="seg-lbl">20</span><span class="seg-lbl">40</span><span class="seg-lbl">60</span><span class="seg-lbl">80</span>
+      <span class="seg-lbl" style="color:${sc}">${cur===null?'tap →':full?'FULL ✓':rem!==null?fmt(rem)+' left':pct+'%'}</span>
+    </div>
+    ${full?`<button class="btn-main" onclick="soldProduct('${id}')"
+      style="background:linear-gradient(135deg,var(--gold),#f59e0b);color:#000;font-weight:800;margin-top:8px">
+      💸 Sprzedano — Reset
+    </button>`:''}
   </div>`;
 }
 
@@ -1073,7 +1160,7 @@ function renderBunker(){
   const dur=boost?b.supplyBoostMin:b.supplyMin;const rem=supplyRem('bunker');const pct=supplyPct('bunker');const mRem=mansionRemain('bunker');
   const inner=`${cardHeader('bunker','<img src="bunker-icon.jpg" alt="Bunker">','BUNKER',boost?`Mansion Boost · ${fmt(mRem)} left`:'Full upgrades · '+bz.earn,b.active)}
   <div class="boosts"><div class="boost-pill ${boost?'on':''}" onclick="toggleMansionBoost('bunker')">🏠 Mansion Boost <span class="pill-timer">${boost?fmt(mRem)+' left':'3× · 24h · '+b.supplyMin+'→'+b.supplyBoostMin+'min'}</span></div></div>
-  ${timerBlock(rem,pct,bz.color,dur)}${segsHTML('bunker',pct,bz.color,bz.glow)}${topUpBtn('bunker',bz.color,bz.glow)}${earnHTML('bunker')}`;
+  ${timerBlock(rem,pct,bz.color,dur)}${segsHTML('bunker',pct,bz.color,bz.glow)}${topUpBtn('bunker',bz.color,bz.glow)}${productHTML('bunker')}${earnHTML('bunker')}`;
   return card('bunker',inner);
 }
 
@@ -1087,7 +1174,7 @@ function renderAcid(){
     <div class="boost-pill ${daily?'on-acid':''}" onclick="toggleAcidDaily()">🧪 Daily Boost <span class="pill-timer">${daily?fmt(dRem)+' left':'30min · 2× · FREE · resets '+nextReset+'h'}</span></div>
     <div class="boost-pill ${mansion?'on':''}" onclick="toggleMansionBoost('acid')">🏠 Mansion <span class="pill-timer">${mansion?fmt(mRem)+' left':'3× · 24h'}</span></div>
   </div>
-  ${timerBlock(rem,pct,bz.color,dur)}${segsHTML('acid',pct,bz.color,bz.glow)}${topUpBtn('acid',bz.color,'rgba(118,255,3,.3)')}${earnHTML('acid')}`;
+  ${timerBlock(rem,pct,bz.color,dur)}${segsHTML('acid',pct,bz.color,bz.glow)}${topUpBtn('acid',bz.color,'rgba(118,255,3,.3)')}${productHTML('acid')}${earnHTML('acid')}`;
   return card('acid',inner);
 }
 
@@ -1096,7 +1183,7 @@ function renderMeth(){
   const dur=boost?b.supplyBoostMin:b.supplyMin;const rem=supplyRem('meth');const pct=supplyPct('meth');const mRem=mansionRemain('meth');
   const inner=`${cardHeader('meth','<img src="meth-icon.jpg" alt="Meth">','METH LAB',boost?`Mansion Boost · ${fmt(mRem)} left`:'MC President active · '+bz.earn,b.active)}
   <div class="boosts"><div class="boost-pill ${boost?'on':''}" onclick="toggleMansionBoost('meth')">🏠 Mansion Boost <span class="pill-timer">${boost?fmt(mRem)+' left':'3× · 24h · '+b.supplyMin+'→'+b.supplyBoostMin+'min'}</span></div></div>
-  ${timerBlock(rem,pct,bz.color,dur)}${segsHTML('meth',pct,bz.color,bz.glow)}${topUpBtn('meth',bz.color,bz.glow)}${earnHTML('meth')}`;
+  ${timerBlock(rem,pct,bz.color,dur)}${segsHTML('meth',pct,bz.color,bz.glow)}${topUpBtn('meth',bz.color,bz.glow)}${productHTML('meth')}${earnHTML('meth')}`;
   return card('meth',inner);
 }
 
@@ -1105,7 +1192,7 @@ function renderMC(id,icon,name){
   const dur=getSupplyDur(id);const rem=supplyRem(id);const pct=supplyPct(id);const mRem=mansionRemain(id);
   const inner=`${cardHeader(id,icon,name,boost?`Mansion Boost · ${fmt(mRem)} left`:'Full upgrades · '+bz.earn,b.active)}
   <div class="boosts"><div class="boost-pill ${boost?'on':''}" onclick="toggleMansionBoost('${id}')">🏠 Mansion Boost <span class="pill-timer">${boost?fmt(mRem)+' left':'3× · 24h'}</span></div></div>
-  ${timerBlock(rem,pct,bz.color,dur)}${segsHTML(id,pct,bz.color,bz.glow)}${topUpBtn(id,bz.color,bz.glow)}${earnHTML(id)}`;
+  ${timerBlock(rem,pct,bz.color,dur)}${segsHTML(id,pct,bz.color,bz.glow)}${topUpBtn(id,bz.color,bz.glow)}${productHTML(id)}${earnHTML(id)}`;
   return card(id,inner);
 }
 
@@ -1193,13 +1280,28 @@ function liveUpdate(){
     // progress bar
     const pb=document.querySelector(`[data-id="${id}"] .prog-fill`);
     if(pb){const pctNum=pct!==null?Math.max(0,Math.min(100,Math.round(pct*100))):0;pb.style.width=pctNum+'%';pb.style.background=`linear-gradient(90deg,${sc}88,${sc})`;}
-    // segments
+    // supply segments (exclude product segs)
     const lit=pct===null?0:Math.min(5,Math.round(pct*5));
-    document.querySelectorAll(`[data-id="${id}"] .seg-tap`).forEach((seg,i)=>{
+    document.querySelectorAll(`[data-id="${id}"] .seg-tap:not(.prod-seg)`).forEach((seg,i)=>{
       const on=i<lit;seg.className=`seg-tap ${on?'on':''}`;
       if(on){seg.style.background=sc;seg.style.boxShadow=`0 0 6px ${sg}`;}
       else{seg.style.background='';seg.style.boxShadow='';}
     });
+    // product bar live update
+    const cur=productCurrent(id);
+    const pBar=document.getElementById(`pb_${id}`);
+    if(pBar&&cur!==null){
+      const pp=Math.round(cur*100);const col=BIZ[id]?.color||'#fff';const gl=BIZ[id]?.glow||'rgba(255,255,255,.2)';
+      pBar.style.width=pp+'%';
+      pBar.style.background=`linear-gradient(90deg,${col}88,${col})`;
+      pBar.style.boxShadow=`0 0 8px ${gl}`;
+    }
+    // product full — trigger re-render once when it hits 100%
+    if(cur!==null&&cur>=1&&S[id].productSetAt){
+      const pPct=document.querySelector(`[data-id="${id}"] .prod-pct`);
+      const pRem=document.querySelector(`[data-id="${id}"] .seg-footer span:last-child`);
+      if(pPct&&pPct.textContent!=='FULL'){pPct.textContent='FULL';pPct.style.color='var(--gold)';render();}
+    }
   });
   // NC safe
   const safeEl2=elMin(S.nc.safeCollectedAt);const ticks2=Math.min(5,Math.floor(safeEl2/DEF.nc_safe_tick));
