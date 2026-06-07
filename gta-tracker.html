@@ -10,6 +10,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>GTA Business Tracker</title>
+<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 <style>
 :root{
   --bg:#000008;
@@ -487,7 +488,7 @@ header{
     <div class="mstat"><div class="mstat-val" id="ms-active">—</div><div class="mstat-lbl">Active</div></div>
     <div class="mstat"><div class="mstat-val" id="ms-critical" style="color:var(--danger)">—</div><div class="mstat-lbl">Critical</div></div>
     <div class="mstat"><div class="mstat-val" id="ms-earned" style="color:var(--gold)">—</div><div class="mstat-lbl">Earned</div></div>
-    <div class="mstat"><div class="mstat-val" id="ms-status">—</div><div class="mstat-lbl">Session</div></div>
+    <div class="mstat"><div class="mstat-val" id="ms-sync" style="font-size:11px">⏳</div><div class="mstat-lbl">Sync</div></div>
   </div>
   <div class="hdr-line"></div>
 </header>
@@ -644,7 +645,58 @@ let S=(()=>{
   return initState();
 })();
 let notifTimers={},currentSettings=null;
-function save(){localStorage.setItem('gta_v4',JSON.stringify(S));}
+
+// ═══ SYNC (MQTT) ══════════════════════════════════════════════
+const SYNC_TOPIC='gta-tracker/HenryFordEscort/v1/state';
+let mqttClient=null,syncReady=false,ignoreMqtt=false;
+
+function save(){
+  S._t=Date.now();
+  localStorage.setItem('gta_v4',JSON.stringify(S));
+  if(mqttClient&&mqttClient.connected){
+    ignoreMqtt=true;
+    mqttClient.publish(SYNC_TOPIC,JSON.stringify(S),{retain:true,qos:1},()=>{
+      setTimeout(()=>{ignoreMqtt=false;},300);
+    });
+    setSyncIcon('✅');
+  }
+}
+
+function setSyncIcon(icon,color){
+  const el=document.getElementById('ms-sync');
+  if(el){el.textContent=icon;if(color)el.style.color=color;else el.style.color='';}
+}
+
+function initSync(){
+  try{
+    mqttClient=mqtt.connect('wss://broker.hivemq.com:8884/mqtt',{
+      clientId:'gta_'+(Math.random().toString(16).slice(2,10)),
+      clean:true,reconnectPeriod:4000,connectTimeout:8000,
+    });
+    mqttClient.on('connect',()=>{
+      syncReady=true;
+      setSyncIcon('🔗','#22c55e');
+      mqttClient.subscribe(SYNC_TOPIC,{qos:1});
+    });
+    mqttClient.on('reconnect',()=>{syncReady=false;setSyncIcon('🔄');});
+    mqttClient.on('offline',()=>{syncReady=false;setSyncIcon('📵','#6060a0');});
+    mqttClient.on('error',()=>{syncReady=false;setSyncIcon('📵','#6060a0');});
+    mqttClient.on('message',(topic,msg)=>{
+      if(ignoreMqtt)return;
+      try{
+        const remote=JSON.parse(msg.toString());
+        if(!remote||!remote._t)return;
+        if(!S._t||remote._t>S._t){
+          S=remote;
+          localStorage.setItem('gta_v4',JSON.stringify(S));
+          render();
+          setSyncIcon('🔄','#c084fc');
+          setTimeout(()=>setSyncIcon('🔗','#22c55e'),600);
+        }
+      }catch(e){}
+    });
+  }catch(e){setSyncIcon('📵','#6060a0');}
+}
 
 // ═══ HELPERS ═════════════════════════════════════════════════
 function fmt(sec){if(sec<0)sec=0;const h=Math.floor(sec/3600),m=Math.floor((sec%3600)/60),s=Math.floor(sec%60);if(h>0)return`${h}:${p2(m)}:${p2(s)}`;return`${p2(m)}:${p2(s)}`;}
@@ -742,11 +794,9 @@ function updateMissionBar(){
   const msActive=document.getElementById('ms-active');
   const msCritical=document.getElementById('ms-critical');
   const msEarned=document.getElementById('ms-earned');
-  const msStatus=document.getElementById('ms-status');
   if(msActive)msActive.textContent=active+'/7';
   if(msCritical){msCritical.textContent=critical;msCritical.style.color=critical>0?'var(--danger)':'var(--ok)';}
   if(msEarned)msEarned.textContent=totalEarned>0?'$'+Math.round(totalEarned/1000)+'K':'—';
-  if(msStatus)msStatus.textContent=S.sessionPausedAt?'⏸ PAUSED':'● LIVE';
 }
 
 // ═══ ACTIONS ═════════════════════════════════════════════════
@@ -1126,6 +1176,7 @@ setInterval(()=>render(),60000);
     else if(Notification.permission==='granted')scheduleAll();
   }
   render();
+  initSync();
 })();
 </script>
 <script>
