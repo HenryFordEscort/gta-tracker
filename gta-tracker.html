@@ -14,7 +14,7 @@
 <style>
 :root{
   --bg:#000008;
-  --glass:rgba(8,4,24,.82);
+  --glass:rgba(8,4,24,.45);
   --border:rgba(110,60,255,.13);
   --border2:rgba(160,100,255,.22);
   --text:#ece8ff;
@@ -53,16 +53,16 @@ body{
   content:'';position:absolute;inset:0;
   background:
     linear-gradient(180deg,
-      rgba(0,0,12,.82) 0%,
-      rgba(0,0,8,.62) 35%,
-      rgba(0,0,8,.68) 70%,
-      rgba(0,0,12,.85) 100%
+      rgba(0,0,10,.70) 0%,
+      rgba(0,0,6,.32) 35%,
+      rgba(0,0,6,.38) 70%,
+      rgba(0,0,10,.72) 100%
     );
 }
 /* subtle vignette */
 #parallax-wrap::before{
   content:'';position:absolute;inset:0;z-index:1;
-  background:radial-gradient(ellipse at 50% 40%, transparent 40%, rgba(0,0,15,.55) 100%);
+  background:radial-gradient(ellipse at 50% 40%, transparent 50%, rgba(0,0,12,.35) 100%);
 }
 
 /* ── LAYOUT ────────────────────────────────────────────── */
@@ -71,7 +71,7 @@ body{
 /* ── HEADER ────────────────────────────────────────────── */
 header{
   position:sticky;top:0;z-index:200;
-  background:rgba(0,0,10,.88);
+  background:rgba(0,0,10,.78);
   backdrop-filter:blur(40px) saturate(2);
   border-bottom:1px solid rgba(255,255,255,.04);
 }
@@ -275,7 +275,7 @@ header{
 /* ── TIMER BLOCK ───────────────────────────────────────── */
 .timer-wrap{
   position:relative;overflow:hidden;
-  background:rgba(0,0,0,.4);border-radius:20px;
+  background:rgba(0,0,0,.22);border-radius:20px;
   padding:18px 20px 16px;margin-bottom:10px;
   border:1px solid rgba(255,255,255,.04);
 }
