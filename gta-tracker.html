@@ -33,8 +33,37 @@ body{
   color:var(--text);font-size:14px;overflow-x:hidden;
 }
 
-/* ── AURORA BACKGROUND ─────────────────────────────────── */
-#aurora{position:fixed;inset:0;z-index:0;pointer-events:none;}
+/* ── PARALLAX BACKGROUND ───────────────────────────────── */
+#parallax-wrap{
+  position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;
+}
+#parallax-bg{
+  position:absolute;
+  top:50%;left:50%;
+  width:130%;height:130%;
+  transform:translate(-50%,-50%);
+  will-change:transform;
+  transition:transform .05s linear;
+}
+#parallax-bg img{
+  width:100%;height:100%;object-fit:cover;display:block;
+}
+/* dark overlay so cards stay readable */
+#parallax-wrap::after{
+  content:'';position:absolute;inset:0;
+  background:
+    linear-gradient(180deg,
+      rgba(0,0,12,.82) 0%,
+      rgba(0,0,8,.62) 35%,
+      rgba(0,0,8,.68) 70%,
+      rgba(0,0,12,.85) 100%
+    );
+}
+/* subtle vignette */
+#parallax-wrap::before{
+  content:'';position:absolute;inset:0;z-index:1;
+  background:radial-gradient(ellipse at 50% 40%, transparent 40%, rgba(0,0,15,.55) 100%);
+}
 
 /* ── LAYOUT ────────────────────────────────────────────── */
 .app{position:relative;z-index:1;padding-bottom:130px;}
@@ -469,7 +498,9 @@ header{
 </style>
 </head>
 <body>
-<canvas id="aurora"></canvas>
+<div id="parallax-wrap">
+  <div id="parallax-bg"><img src="bg.jpg" alt=""></div>
+</div>
 <div class="app">
 
 <header>
@@ -526,60 +557,57 @@ header{
 </div>
 
 <script>
-// ═══ AURORA BACKGROUND ═══════════════════════════════════════
+// ═══ PARALLAX BACKGROUND ═════════════════════════════════════
 (function(){
-  const c=document.getElementById('aurora');
-  const ctx=c.getContext('2d');
-  let W,H;
-  function resize(){W=c.width=window.innerWidth;H=c.height=window.innerHeight;}
-  resize();window.addEventListener('resize',resize);
+  const bg=document.getElementById('parallax-bg');
+  if(!bg)return;
+  let tx=0,ty=0,cx=0,cy=0;
+  const MAX=18; // max pixel shift
 
-  const blobs=[
-    {x:.15,y:.1,r:.55,hue:270,speed:.00008,px:.00012,py:.00007},
-    {x:.85,y:.2,r:.5,hue:300,speed:.00006,px:-.00009,py:.0001},
-    {x:.1,y:.75,r:.48,hue:220,speed:.00009,px:.00011,py:-.00008},
-    {x:.9,y:.85,r:.45,hue:190,speed:.00007,px:-.00008,py:-.00012},
-    {x:.5,y:.45,r:.35,hue:255,speed:.0001,px:.00006,py:.00009},
-  ];
-
-  let t=0;
-  function draw(){
-    t++;
-    ctx.clearRect(0,0,W,H);
-
-    // base
-    ctx.fillStyle='#000008';
-    ctx.fillRect(0,0,W,H);
-
-    // blobs
-    blobs.forEach(b=>{
-      const bx=(b.x+Math.sin(t*b.px)*0.25)*W;
-      const by=(b.y+Math.cos(t*b.py)*0.22)*H;
-      const br=b.r*Math.min(W,H)*(0.9+Math.sin(t*b.speed)*0.1);
-      const g=ctx.createRadialGradient(bx,by,0,bx,by,br);
-      const alpha=0.07+Math.sin(t*b.speed*1.3)*0.02;
-      g.addColorStop(0,`hsla(${b.hue},80%,55%,${alpha})`);
-      g.addColorStop(0.5,`hsla(${b.hue+20},70%,40%,${alpha*.4})`);
-      g.addColorStop(1,'rgba(0,0,0,0)');
-      ctx.fillStyle=g;
-      ctx.fillRect(0,0,W,H);
-    });
-
-    // subtle dot grid
-    ctx.fillStyle='rgba(140,80,255,.06)';
-    const sp=40;
-    for(let x=0;x<W+sp;x+=sp){
-      for(let y=0;y<H+sp;y+=sp){
-        const pulse=Math.sin(t*.003+(x+y)*.03)*.5+.5;
-        ctx.globalAlpha=pulse*.12+.02;
-        ctx.beginPath();ctx.arc(x,y,.8,0,Math.PI*2);ctx.fill();
-      }
-    }
-    ctx.globalAlpha=1;
-
-    requestAnimationFrame(draw);
+  // — gyroscope (iPhone/Android)
+  let gyroEnabled=false;
+  function onOrientation(e){
+    if(e.gamma===null)return;
+    gyroEnabled=true;
+    tx=Math.max(-MAX,Math.min(MAX, e.gamma/45*MAX));
+    ty=Math.max(-MAX,Math.min(MAX,(e.beta-30)/45*MAX));
   }
-  draw();
+  if(window.DeviceOrientationEvent){
+    // iOS 13+ requires permission
+    if(typeof DeviceOrientationEvent.requestPermission==='function'){
+      document.addEventListener('click',function ask(){
+        DeviceOrientationEvent.requestPermission().then(s=>{
+          if(s==='granted')window.addEventListener('deviceorientation',onOrientation);
+        }).catch(()=>{});
+        document.removeEventListener('click',ask);
+      },{once:true});
+    } else {
+      window.addEventListener('deviceorientation',onOrientation);
+    }
+  }
+
+  // — mouse fallback (desktop)
+  window.addEventListener('mousemove',e=>{
+    if(gyroEnabled)return;
+    const rx=(e.clientX/window.innerWidth -.5)*2;
+    const ry=(e.clientY/window.innerHeight-.5)*2;
+    tx=rx*MAX;
+    ty=ry*MAX;
+  });
+
+  // — scroll parallax (subtle depth on scroll)
+  let scrollY=0;
+  window.addEventListener('scroll',()=>{scrollY=window.scrollY;},{ passive:true});
+
+  // — smooth easing loop
+  function loop(){
+    cx+=(tx-cx)*.06;
+    cy+=(ty-cy)*.06;
+    const sy=scrollY*.12; // scroll moves bg up slower than content
+    bg.style.transform=`translate(calc(-50% + ${cx.toFixed(2)}px), calc(-50% + ${(cy+sy).toFixed(2)}px))`;
+    requestAnimationFrame(loop);
+  }
+  loop();
 })();
 
 // ═══ DATA ════════════════════════════════════════════════════
