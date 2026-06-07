@@ -643,7 +643,7 @@ const DEF={
 
 const BIZ={
   nightclub:{color:'#C084FC',glow:'rgba(192,132,252,.35)',rgb:'192,132,252',earn:'$50K / 48min'},
-  bunker:   {color:'#FFB300',glow:'rgba(255,179,0,.35)',  rgb:'255,179,0',  earn:'$1,029,000'},
+  bunker:   {color:'#e03020',glow:'rgba(220,50,30,.4)',   rgb:'220,50,30',  earn:'$1,029,000'},
   acid:     {color:'#76FF03',glow:'rgba(118,255,3,.3)',   rgb:'118,255,3',  earn:'$351,840'},
   meth:     {color:'#00D4FF',glow:'rgba(0,212,255,.3)',   rgb:'0,212,255',  earn:'$892,500'},
   cocaine:  {color:'#E2E8F0',glow:'rgba(226,232,240,.2)',rgb:'226,232,240',earn:'$525,000'},
@@ -1064,7 +1064,7 @@ function renderWarehouse(){
 function renderBunker(){
   const b=S.bunker;const bz=BIZ.bunker;const boost=isBoostActive('bunker');
   const dur=boost?b.supplyBoostMin:b.supplyMin;const rem=supplyRem('bunker');const pct=supplyPct('bunker');const mRem=mansionRemain('bunker');
-  const inner=`${cardHeader('bunker','🏭','BUNKER',boost?`Mansion Boost · ${fmt(mRem)} left`:'Full upgrades · '+bz.earn,b.active)}
+  const inner=`${cardHeader('bunker','<img src="bunker-icon.jpg" alt="Bunker">','BUNKER',boost?`Mansion Boost · ${fmt(mRem)} left`:'Full upgrades · '+bz.earn,b.active)}
   <div class="boosts"><div class="boost-pill ${boost?'on':''}" onclick="toggleMansionBoost('bunker')">🏠 Mansion Boost <span class="pill-timer">${boost?fmt(mRem)+' left':'3× · 24h · '+b.supplyMin+'→'+b.supplyBoostMin+'min'}</span></div></div>
   ${timerBlock(rem,pct,bz.color,dur)}${segsHTML('bunker',pct,bz.color,bz.glow)}${topUpBtn('bunker',bz.color,bz.glow)}${earnHTML('bunker')}`;
   return card('bunker',inner);
