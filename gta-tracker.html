@@ -888,7 +888,12 @@ function scheduleSupplyNotif(id){
   scheduleNotif(id+'_empty', msEmpty, `🔴 ${id.toUpperCase()} EMPTY`, `Zasoby skończyły się — resupply!`);
 }
 function scheduleDJNotif(){if(!S.nc.djChangedAt)return;const at=S.nc.djChangedAt+S.nc.djInterval*60000-S.alertMin*60000;scheduleNotif('nc_dj',at-Date.now(),'🎵 NIGHTCLUB',`Change DJ in ${S.alertMin}min!`);}
-function scheduleSafeNotif(){if(!S.nc.safeCollectedAt)return;const at=S.nc.safeCollectedAt+DEF.nc_safe_tick*60000*5-S.alertMin*60000;scheduleNotif('nc_safe',at-Date.now(),'💰 NIGHTCLUB SAFE','Safe nearly full!');}
+function scheduleSafeNotif(){
+  if(!S.nc.safeCollectedAt)return;
+  const fullAt=S.nc.safeCollectedAt+DEF.nc_safe_tick*60000*5;
+  scheduleNotif('nc_safe',  fullAt-S.alertMin*60000-Date.now(),'💰 NIGHTCLUB SAFE',`Safe pełny za ${S.alertMin}min!`);
+  scheduleNotif('nc_safe_full', fullAt-Date.now(),'💰 SAFE PEŁNY','Odbierz kasę z nightclubu!');
+}
 function scheduleAll(){['bunker','acid','meth','cocaine','cash','weed'].forEach(scheduleSupplyNotif);scheduleDJNotif();scheduleSafeNotif();}
 
 // ═══ PAUSE ═══════════════════════════════════════════════════
@@ -1336,6 +1341,22 @@ function liveUpdate(){
   // DJ
   const djEl2=elMin(S.nc.djChangedAt);const djRem2=S.nc.djChangedAt?Math.max(0,(S.nc.djInterval-djEl2)*60):null;
   const djTimerEl=document.querySelector('.dj-timer');if(djTimerEl&&djRem2!=null)djTimerEl.textContent=fmt(djRem2);
+  // DJ fallback notification
+  if(djRem2!==null&&Notification.permission==='granted'){
+    const wDJ=S.alertMin*60;
+    if(djRem2<=wDJ&&djRem2>wDJ-5&&!notifiedEmpty['dj_warn']){notifiedEmpty['dj_warn']=true;notify('🎵 NIGHTCLUB',`Change DJ in ${S.alertMin}min!`,'nc_dj');}
+    if(djRem2<=2&&!notifiedEmpty['dj_zero']){notifiedEmpty['dj_zero']=true;notify('🎵 DJ CHANGE NOW','Czas zmienić DJ-a!','nc_dj_now');if(navigator.vibrate)navigator.vibrate([200,100,200]);}
+    if(djRem2>wDJ+10){notifiedEmpty['dj_warn']=false;notifiedEmpty['dj_zero']=false;}
+  }
+  // Safe fallback notification
+  const safeTicks=Math.min(5,Math.floor(elMin(S.nc.safeCollectedAt)/DEF.nc_safe_tick));
+  const safeSecToFull=S.nc.safeCollectedAt?Math.max(0,(S.nc.safeCollectedAt+DEF.nc_safe_tick*60000*5-Date.now())/1000):null;
+  if(safeSecToFull!==null&&Notification.permission==='granted'){
+    const wSafe=S.alertMin*60;
+    if(safeSecToFull<=wSafe&&safeSecToFull>wSafe-5&&!notifiedEmpty['safe_warn']){notifiedEmpty['safe_warn']=true;notify('💰 NIGHTCLUB SAFE','Safe pełny za '+S.alertMin+'min!','nc_safe');}
+    if(safeSecToFull<=2&&!notifiedEmpty['safe_full']){notifiedEmpty['safe_full']=true;notify('💰 SAFE PEŁNY','Odbierz kasę z nightclubu!','nc_safe_full');if(navigator.vibrate)navigator.vibrate([300,100,300]);}
+    if(safeSecToFull>wSafe+10){notifiedEmpty['safe_warn']=false;notifiedEmpty['safe_full']=false;}
+  }
   // Warehouse
   if(S.nc.warehouseTracking){
     const elH=elMin(S.nc.warehouseStartedAt)/60;let minSec=Infinity,nextP=null,needRender=false;
