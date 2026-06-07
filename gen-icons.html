@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head><title>Generate Icons</title>
+<style>
+  body { background: #111; display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 20px; font-family: sans-serif; }
+  canvas { border-radius: 22%; box-shadow: 0 0 40px rgba(120,60,255,.5); }
+  button { background: linear-gradient(135deg,#7c3aff,#c026d3); color: #fff; border: none; border-radius: 12px; padding: 14px 32px; font-size: 16px; font-weight: 800; cursor: pointer; letter-spacing: 1px; }
+  p { color: #aaa; font-size: 13px; }
+</style>
+</head>
+<body>
+<canvas id="c512" width="512" height="512"></canvas>
+<canvas id="c192" width="192" height="192" style="width:96px;height:96px"></canvas>
+<button onclick="download()">⬇ Download Icons</button>
+<p>Zapisz icon-192.png i icon-512.png do folderu z aplikacją</p>
+<script>
+function drawIcon(canvas) {
+  const s = canvas.width;
+  const ctx = canvas.getContext('2d');
+  ctx.save();
+
+  // — Rounded rect clip
+  ctx.beginPath();
+  ctx.roundRect(0, 0, s, s, s * 0.22);
+  ctx.clip();
+
+  // — Deep dark background
+  ctx.fillStyle = '#02020e';
+  ctx.fillRect(0, 0, s, s);
+
+  // — Bottom purple-blue gradient fill
+  const bgGrad = ctx.createLinearGradient(0, s * 0.4, 0, s);
+  bgGrad.addColorStop(0, 'rgba(60,10,120,0)');
+  bgGrad.addColorStop(1, 'rgba(80,20,180,0.45)');
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, s, s);
+
+  // — Dot grid
+  ctx.fillStyle = 'rgba(140,80,255,0.18)';
+  const sp = s / 13;
+  for (let x = sp/2; x < s; x += sp) {
+    for (let y = sp/2; y < s; y += sp) {
+      ctx.beginPath();
+      ctx.arc(x, y, s * 0.006, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  // — Top-left purple radial glow
+  const glow1 = ctx.createRadialGradient(s * 0.15, s * 0.15, 0, s * 0.15, s * 0.15, s * 0.65);
+  glow1.addColorStop(0, 'rgba(140,60,255,0.28)');
+  glow1.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = glow1;
+  ctx.fillRect(0, 0, s, s);
+
+  // — Bottom-right pink glow
+  const glow2 = ctx.createRadialGradient(s * 0.85, s * 0.88, 0, s * 0.85, s * 0.88, s * 0.55);
+  glow2.addColorStop(0, 'rgba(220,40,180,0.2)');
+  glow2.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = glow2;
+  ctx.fillRect(0, 0, s, s);
+
+  // — Horizontal scan line glow across middle
+  const scanGrad = ctx.createLinearGradient(0, s * 0.42, 0, s * 0.58);
+  scanGrad.addColorStop(0, 'rgba(120,60,255,0)');
+  scanGrad.addColorStop(0.5, 'rgba(160,80,255,0.1)');
+  scanGrad.addColorStop(1, 'rgba(120,60,255,0)');
+  ctx.fillStyle = scanGrad;
+  ctx.fillRect(0, s * 0.42, s, s * 0.16);
+
+  // — Top accent line
+  const topLine = ctx.createLinearGradient(0, 0, s, 0);
+  topLine.addColorStop(0, 'rgba(120,60,255,0)');
+  topLine.addColorStop(0.3, 'rgba(180,80,255,0.9)');
+  topLine.addColorStop(0.5, 'rgba(220,120,255,1)');
+  topLine.addColorStop(0.7, 'rgba(180,80,255,0.9)');
+  topLine.addColorStop(1, 'rgba(120,60,255,0)');
+  ctx.fillStyle = topLine;
+  ctx.fillRect(0, 0, s, s * 0.006);
+
+  // — Corner brackets (futuristic HUD)
+  const bk = s * 0.07;    // bracket size
+  const bm = s * 0.055;   // bracket margin
+  const bw = s * 0.012;   // line width
+  ctx.strokeStyle = 'rgba(180,100,255,0.7)';
+  ctx.lineWidth = bw;
+  ctx.lineCap = 'square';
+
+  // top-left
+  ctx.beginPath(); ctx.moveTo(bm, bm + bk); ctx.lineTo(bm, bm); ctx.lineTo(bm + bk, bm); ctx.stroke();
+  // top-right
+  ctx.beginPath(); ctx.moveTo(s - bm - bk, bm); ctx.lineTo(s - bm, bm); ctx.lineTo(s - bm, bm + bk); ctx.stroke();
+  // bottom-left
+  ctx.beginPath(); ctx.moveTo(bm, s - bm - bk); ctx.lineTo(bm, s - bm); ctx.lineTo(bm + bk, s - bm); ctx.stroke();
+  // bottom-right
+  ctx.beginPath(); ctx.moveTo(s - bm - bk, s - bm); ctx.lineTo(s - bm, s - bm); ctx.lineTo(s - bm, s - bm - bk); ctx.stroke();
+
+  // — "GTA" — big, white, ultra-bold with glow
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  ctx.font = `900 ${s * 0.38}px -apple-system, "SF Pro Display", "Helvetica Neue", sans-serif`;
+
+  // glow layer
+  ctx.shadowColor = 'rgba(180,100,255,0.9)';
+  ctx.shadowBlur = s * 0.06;
+  const gtaGrad = ctx.createLinearGradient(0, s * 0.19, 0, s * 0.53);
+  gtaGrad.addColorStop(0, '#ffffff');
+  gtaGrad.addColorStop(0.6, 'rgba(230,210,255,0.95)');
+  gtaGrad.addColorStop(1, 'rgba(180,120,255,0.85)');
+  ctx.fillStyle = gtaGrad;
+  ctx.fillText('GTA', s * 0.5, s * 0.53);
+  ctx.shadowBlur = 0;
+
+  // — Divider line between GTA and BUSINESS
+  const divY = s * 0.575;
+  const divGrad = ctx.createLinearGradient(s * 0.1, 0, s * 0.9, 0);
+  divGrad.addColorStop(0, 'rgba(180,80,255,0)');
+  divGrad.addColorStop(0.2, 'rgba(200,100,255,0.8)');
+  divGrad.addColorStop(0.5, 'rgba(255,200,255,1)');
+  divGrad.addColorStop(0.8, 'rgba(200,100,255,0.8)');
+  divGrad.addColorStop(1, 'rgba(180,80,255,0)');
+  ctx.fillStyle = divGrad;
+  ctx.fillRect(s * 0.1, divY, s * 0.8, s * 0.004);
+
+  // — "BUSINESS" — gold gradient, smaller, spaced
+  ctx.font = `800 ${s * 0.115}px -apple-system, "SF Pro Display", "Helvetica Neue", sans-serif`;
+  ctx.letterSpacing = `${s * 0.015}px`;
+
+  ctx.shadowColor = 'rgba(255,180,0,0.7)';
+  ctx.shadowBlur = s * 0.04;
+  const bizGrad = ctx.createLinearGradient(0, s * 0.61, 0, s * 0.76);
+  bizGrad.addColorStop(0, '#ffe066');
+  bizGrad.addColorStop(0.4, '#ffd700');
+  bizGrad.addColorStop(1, '#ff9800');
+  ctx.fillStyle = bizGrad;
+  ctx.fillText('BUSINESS', s * 0.5, s * 0.74);
+  ctx.shadowBlur = 0;
+
+  // — Small "TRACKER" label at bottom
+  ctx.font = `600 ${s * 0.062}px -apple-system, "SF Pro Display", "Helvetica Neue", sans-serif`;
+  ctx.fillStyle = 'rgba(160,120,255,0.55)';
+  ctx.fillText('TRACKER', s * 0.5, s * 0.875);
+
+  ctx.restore();
+}
+
+drawIcon(document.getElementById('c512'));
+drawIcon(document.getElementById('c192'));
+
+function download() {
+  ['192','512'].forEach(sz => {
+    const c = document.getElementById('c' + sz);
+    const a = document.createElement('a');
+    a.href = c.toDataURL('image/png');
+    a.download = 'icon-' + sz + '.png';
+    a.click();
+  });
+}
+</script>
+</body>
+</html>
