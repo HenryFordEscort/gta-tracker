@@ -531,21 +531,15 @@ header{
 .esrow-bar{height:100%;background:linear-gradient(90deg,rgba(255,215,0,.7),rgba(255,215,0,.4));border-radius:2px;transition:width .5s ease;}
 .esrow-amt{font-size:12px;font-weight:900;color:var(--gold);text-align:right;}
 .esrow-cnt{font-size:9px;color:var(--sub2);text-align:right;}
-/* ── DESKTOP 2-COLUMN LAYOUT ───────────────────────────────── */
+/* ── DESKTOP LAYOUT ─────────────────────────────────────────── */
 @media(min-width:900px){
-  .app{max-width:1200px;margin:0 auto;}
-  .cards{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:16px;
-    padding:0 20px;
-    align-items:start;
-  }
-  .sec-lbl{padding:24px 20px 10px;}
-  .earn-summary-card{margin:0 20px 28px;}
-}
-@media(min-width:1400px){
-  .cards{grid-template-columns:1fr 1fr 1fr;}
+  .app{max-width:1400px;margin:0 auto;}
+  .desktop-layout{display:flex;gap:16px;align-items:start;padding:0 16px;}
+  .desktop-nc{flex:0 0 420px;}
+  .desktop-biz{flex:1;min-width:0;}
+  .cards{padding:0;display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start;}
+  .sec-lbl{padding:16px 0 10px;}
+  .earn-summary-card{margin:0 16px 28px;}
 }</style>
 </head>
 <body>
@@ -1322,9 +1316,12 @@ function renderIllegalCards(){
 
 function render(){
   document.getElementById('root').innerHTML=
-    renderNightclub()+
-    `<div class="sec-lbl">Illegal Businesses</div><div class="cards">`+
-    renderIllegalCards()+
+    `<div class="desktop-layout">` +
+      `<div class="desktop-nc">`+renderNightclub()+`</div>`+
+      `<div class="desktop-biz">`+
+        `<div class="sec-lbl">Illegal Businesses</div>`+
+        `<div class="cards">`+renderIllegalCards()+`</div>`+
+      `</div>`+
     `</div>`+
     renderEarningsSummary();
   if(!S.nc.warehouseTracking)DEF.nc_warehouse.forEach(p=>{const el=document.getElementById('wh_in_'+p.id);if(el)el.value=S.nc.warehouseStock[p.id]||0;});
