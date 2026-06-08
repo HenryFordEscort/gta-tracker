@@ -1348,9 +1348,10 @@ function liveUpdate(){
       if(pVal)pVal.textContent=full||pp>0?fmtM(Math.round(cur*PRODUCT[id].earnMax)):'';
       const pRem=document.getElementById(`pr_${id}`);
       if(pRem){const rem=productFillRem(id);pRem.textContent=full?'SELL IT!':rem!==null?fmt(rem)+' to full':'';pRem.style.color=sc;}
-      if(full&&!notifiedEmpty[id+'_prod']){notifiedEmpty[id+'_prod']=true;notify(`💰 ${id.toUpperCase()} FULL`,`Stock pełny — czas sprzedać!`,id+'_prod');if(navigator.vibrate)navigator.vibrate([300,100,300,100,300]);}
-      if(!full)notifiedEmpty[id+'_prod']=false;
-      if(full&&!document.getElementById(`pb_${id}`)?.parentElement?.querySelector('.btn-main[onclick*="soldProduct"]'))render();
+      if(full&&!notifiedEmpty[id+'_prod']){notifiedEmpty[id+'_prod']=true;notify(`💰 ${id.toUpperCase()} FULL`,`Stock pełny — czas sprzedać!`,id+'_prod');if(navigator.vibrate)navigator.vibrate([300,100,300,100,300]);render();}
+      if(!full){notifiedEmpty[id+'_prod']=false;notifiedEmpty[id+'_prod_rendered']=false;}
+      // show sell button once when hitting full (not every second)
+      if(full&&!notifiedEmpty[id+'_prod_rendered']){notifiedEmpty[id+'_prod_rendered']=true;render();}
     }
   });
   // NC safe
