@@ -920,6 +920,8 @@ function resumeSession(){
   if(S.acid.dailyBoostAt)S.acid.dailyBoostAt+=offset;
   if(S.nc.djChangedAt)S.nc.djChangedAt+=offset;
   if(S.nc.safeCollectedAt)S.nc.safeCollectedAt+=offset;
+  if(S.nc.warehouseStartedAt)S.nc.warehouseStartedAt+=offset;
+  ['bunker','acid','meth','cocaine','cash','weed'].forEach(id=>{if(S[id].productSetAt)S[id].productSetAt+=offset;});
   S.sessionPausedAt=null;save();scheduleAll();render();
 }
 function updatePauseUI(){
@@ -930,7 +932,7 @@ function updatePauseUI(){
   if(S.sessionPausedAt){
     banner.classList.remove('hidden');
     if(hdrBtn){hdrBtn.textContent='▶';hdrBtn.style.color='#ef4444';}
-    if(durEl){const mins=Math.round((Date.now()-S.sessionPausedAt)/60000);durEl.textContent=`Paused ${mins<1?'just now':mins+'min ago'} · NC warehouse still running`;}
+    if(durEl){const mins=Math.round((Date.now()-S.sessionPausedAt)/60000);durEl.textContent=`Paused ${mins<1?'just now':mins+'min ago'} · wszystkie timery zatrzymane`;}
   }else{
     banner.classList.add('hidden');
     if(hdrBtn){hdrBtn.textContent='⏸';hdrBtn.style.color='';}
