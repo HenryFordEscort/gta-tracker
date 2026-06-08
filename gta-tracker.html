@@ -533,12 +533,12 @@ header{
 .esrow-cnt{font-size:9px;color:var(--sub2);text-align:right;}
 /* ── DESKTOP LAYOUT ─────────────────────────────────────────── */
 @media(min-width:900px){
-  .app{max-width:1400px;margin:0 auto;padding-bottom:40px;}
-  .desktop-layout{display:flex;gap:14px;align-items:start;padding:0 14px;}
+  .app{padding-bottom:40px;}
+  .desktop-layout{display:flex;gap:0;align-items:start;padding:0;}
 
   /* NC kolumna — sticky, scrolluje wewnętrznie jeśli za wysoka */
   .desktop-nc{
-    flex:0 0 50%;
+    flex:0 0 calc(50% - 7px);
     position:sticky;top:70px;
     max-height:calc(100vh - 80px);
     overflow-y:auto;overflow-x:hidden;
@@ -547,7 +547,7 @@ header{
   .desktop-nc::-webkit-scrollbar{display:none;}
   .desktop-nc .card-wrap,.desktop-nc .card{width:100%;box-sizing:border-box;}
 
-  .desktop-biz{flex:1;min-width:0;}
+  .desktop-biz{flex:1;min-width:0;padding-left:14px;}
   .cards{padding:0;display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start;}
   .sec-lbl{padding:10px 0 8px;font-size:7px;}
   .earn-summary-card{margin:0 14px 24px;}
