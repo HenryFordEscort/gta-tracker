@@ -531,7 +531,22 @@ header{
 .esrow-bar{height:100%;background:linear-gradient(90deg,rgba(255,215,0,.7),rgba(255,215,0,.4));border-radius:2px;transition:width .5s ease;}
 .esrow-amt{font-size:12px;font-weight:900;color:var(--gold);text-align:right;}
 .esrow-cnt{font-size:9px;color:var(--sub2);text-align:right;}
-</style>
+/* ── DESKTOP 2-COLUMN LAYOUT ───────────────────────────────── */
+@media(min-width:900px){
+  .app{max-width:1200px;margin:0 auto;}
+  .cards{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:16px;
+    padding:0 20px;
+    align-items:start;
+  }
+  .sec-lbl{padding:24px 20px 10px;}
+  .earn-summary-card{margin:0 20px 28px;}
+}
+@media(min-width:1400px){
+  .cards{grid-template-columns:1fr 1fr 1fr;}
+}</style>
 </head>
 <body>
 <div id="parallax-wrap">
