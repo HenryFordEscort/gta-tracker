@@ -538,13 +538,14 @@ header{
 
   /* NC kolumna — sticky, scrolluje wewnętrznie jeśli za wysoka */
   .desktop-nc{
-    flex:0 0 360px;
+    flex:0 0 38%;
     position:sticky;top:70px;
     max-height:calc(100vh - 80px);
     overflow-y:auto;overflow-x:hidden;
     scrollbar-width:none;
   }
   .desktop-nc::-webkit-scrollbar{display:none;}
+  .desktop-nc .card-wrap,.desktop-nc .card{width:100%;box-sizing:border-box;}
 
   .desktop-biz{flex:1;min-width:0;}
   .cards{padding:0;display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start;}
