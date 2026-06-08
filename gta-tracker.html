@@ -14,6 +14,7 @@
 <style>
 :root{
   --bg:#000008;
+  --anim-play:running;
   --glass:rgba(8,4,24,.45);
   --border:rgba(110,60,255,.13);
   --border2:rgba(160,100,255,.22);
@@ -25,7 +26,7 @@
   --danger:#ef4444;
   --gold:#ffd700;
 }
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased;animation-play-state:var(--anim-play)!important;}
 html,body{height:100%;background:var(--bg);}
 body{
   min-height:100dvh;
@@ -547,6 +548,7 @@ header{
     <div class="hdr-actions">
       <button class="hdr-btn" onclick="reqNotif()">🔔</button>
       <button class="hdr-btn" id="pause-hdr-btn" onclick="togglePause()">⏸</button>
+      <button class="hdr-btn" id="perf-btn" onclick="togglePerfMode()" title="Tryb wydajności">⚡</button>
       <button class="hdr-btn" onclick="openSettings('global')">⚙</button>
     </div>
   </div>
@@ -593,22 +595,41 @@ header{
 
 <script>
 // ═══ PARALLAX BACKGROUND ═════════════════════════════════════
+let perfMode=localStorage.getItem('gta_perf')==='1';
+function applyPerfMode(){
+  const wrap=document.getElementById('parallax-wrap');
+  const btn=document.getElementById('perf-btn');
+  if(perfMode){
+    if(wrap)wrap.style.display='none';
+    document.body.style.background='#02020a';
+    if(btn){btn.textContent='🖼️';btn.title='Włącz tło';}
+    // stop all CSS animations
+    document.documentElement.style.setProperty('--anim-play','paused');
+  } else {
+    if(wrap)wrap.style.display='';
+    document.body.style.background='';
+    if(btn){btn.textContent='⚡';btn.title='Tryb wydajności (wyłącz animacje)';}
+    document.documentElement.style.setProperty('--anim-play','running');
+  }
+  localStorage.setItem('gta_perf',perfMode?'1':'0');
+}
+function togglePerfMode(){perfMode=!perfMode;applyPerfMode();}
+
 (function(){
   const bg=document.getElementById('parallax-bg');
   if(!bg)return;
   let tx=0,ty=0,cx=0,cy=0;
-  const MAX=18; // max pixel shift
+  const MAX=18;
+  let rafId=null;
 
-  // — gyroscope (iPhone/Android)
   let gyroEnabled=false;
   function onOrientation(e){
-    if(e.gamma===null)return;
+    if(e.gamma===null||perfMode)return;
     gyroEnabled=true;
     tx=Math.max(-MAX,Math.min(MAX, e.gamma/45*MAX));
     ty=Math.max(-MAX,Math.min(MAX,(e.beta-30)/45*MAX));
   }
   if(window.DeviceOrientationEvent){
-    // iOS 13+ requires permission
     if(typeof DeviceOrientationEvent.requestPermission==='function'){
       document.addEventListener('click',function ask(){
         DeviceOrientationEvent.requestPermission().then(s=>{
@@ -621,28 +642,28 @@ header{
     }
   }
 
-  // — mouse fallback (desktop)
   window.addEventListener('mousemove',e=>{
-    if(gyroEnabled)return;
+    if(gyroEnabled||perfMode)return;
     const rx=(e.clientX/window.innerWidth -.5)*2;
     const ry=(e.clientY/window.innerHeight-.5)*2;
-    tx=rx*MAX;
-    ty=ry*MAX;
+    tx=rx*MAX; ty=ry*MAX;
   });
 
-  // — scroll parallax (subtle depth on scroll)
   let scrollY=0;
-  window.addEventListener('scroll',()=>{scrollY=window.scrollY;},{ passive:true});
+  window.addEventListener('scroll',()=>{scrollY=window.scrollY;},{passive:true});
 
-  // — smooth easing loop
   function loop(){
-    cx+=(tx-cx)*.06;
-    cy+=(ty-cy)*.06;
-    const sy=scrollY*.12; // scroll moves bg up slower than content
+    if(perfMode){rafId=null;return;}
+    cx+=(tx-cx)*.06; cy+=(ty-cy)*.06;
+    const sy=scrollY*.12;
     bg.style.transform=`translate(calc(-50% + ${cx.toFixed(2)}px), calc(-50% + ${(cy+sy).toFixed(2)}px))`;
-    requestAnimationFrame(loop);
+    rafId=requestAnimationFrame(loop);
   }
+  // restart loop when perf mode turns off
+  const _orig=togglePerfMode;
+  window.togglePerfMode=function(){perfMode=!perfMode;applyPerfMode();if(!perfMode&&!rafId)loop();};
   loop();
+  applyPerfMode();
 })();
 
 // ═══ DATA ════════════════════════════════════════════════════
